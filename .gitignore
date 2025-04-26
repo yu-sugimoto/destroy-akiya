@@ -60,3 +60,12 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# Xcodeの生成物を除外
+#
+*.xcuserdata
+*.xcworkspace
+*.swiftpm
+DerivedData/
+.DS_Store
+
