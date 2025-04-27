@@ -21,7 +21,7 @@ struct ContentView : View {
             defaultModel.components.set(ModelComponent(mesh: mesh, materials: [material]))
             defaultModel.position = [-0.2, 0.05, 0]
 
-            let unityModel = try await Entity(named: "chair_swan")
+            let unityModel = try await Entity(named: "chair")
             unityModel.position = [0.2, 0.05, 0]
 
             let groupEntity = Entity()
@@ -37,7 +37,7 @@ struct ContentView : View {
     // 新しいモデルをロードする非同期関数
     func loadSecondModel() async -> Entity? {
         do {
-            let unityModel = try await Entity(named: "gramophone")
+            let unityModel = try await Entity(named: "test")
             unityModel.position = [0, 0.05, 0]
             return unityModel
         } catch {
