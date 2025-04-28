@@ -31,7 +31,7 @@ struct EndView3: View {
             }
             .navigationBarHidden(true)
             .navigationDestination(isPresented: $isARActive) {
-                EndView3()
+                EndView4()
             }
         }
     }
