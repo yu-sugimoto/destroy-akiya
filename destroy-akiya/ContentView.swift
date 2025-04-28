@@ -17,20 +17,21 @@ import ARKit
 
 struct ContentView: View {
     @State private var arView = ARView(frame: .zero) // AR表示用ARViewの定義
+    @State private var loadNewModels: [String: Entity] = [:] // 新しいモデル名とEntityのマップ
     @State private var hasGoneOutside = false // 外に出たかどうかのフラグ
     @State private var hasTapped = false // タップしたかどうかのフラグ
     @State private var navigateToEnd = false // 終了画面へ遷移するかどうか
     @State private var mainAnchor: AnchorEntity? = nil // 主となるアンカー
     @State private var newModels: [Entity] = [] // タップされたモデルを保持する配列
-
-
+    @State private var remainingModels: Int = 0 // カウント関数
+    
     var body: some View {
         // SwiftUIにおける画面遷移管理（「ARの画面」→「終了画面」）
         NavigationStack {
             // ZStack：上に重ねるレイアウト
             ZStack {
-                // aRViewとmainAnchorを渡す
-                ARViewContainer(arView: $arView, mainAnchor: $mainAnchor, newModels: $newModels)
+                // ARviewに渡す変数
+                ARViewContainer(arView: $arView, loadNewModels: $loadNewModels, mainAnchor: $mainAnchor, newModels: $newModels, remainingModels: $remainingModels)
                     .edgesIgnoringSafeArea(.all) //ARViewを画面いっぱいに広げる
                     // 配置
                     .onAppear {
@@ -39,9 +40,25 @@ struct ContentView: View {
 
                 // VStack：縦に並べるレイアウト
                 VStack {
+                    HStack {
+                        Spacer()
+                        Text("残り: \(remainingModels)個")
+                            .font(.headline)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.black.opacity(0.5))
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.white.opacity(0.8), lineWidth: 1)
+                            )
+                            .foregroundColor(.white)
+                            .padding(.top, 20)
+                            .padding(.trailing, 16)
+                    }
                     Spacer() // 上側に余白を取って、ボタンを画面の一番下にする
                     // 三項演算子（条件 ? 真のときの値 : 偽のときの値）
-                    Button(hasGoneOutside ? "終了" : "家の外に出る") {
+                    Button(hasGoneOutside ? "終了" : "トドメをさす") {
                         if hasGoneOutside {
                             navigateToEnd = true // 終了画面へ遷移
                         } else {
@@ -54,6 +71,8 @@ struct ContentView: View {
                     .foregroundColor(.white)
                     .cornerRadius(10)
                     .padding()
+                    .disabled(remainingModels > 0)
+                    .opacity(remainingModels > 0 ? 0.5 : 1.0)
                 }
             }
             // 特定の条件で画面遷移をするSwiftUIの標準メソッド
@@ -62,7 +81,7 @@ struct ContentView: View {
             }
         }
     }
-
+    
     // AR空間に置くための土台（mainAnchor）が設置されていない場合に作る関数
     func setupAnchorIfNeeded() {
         // 最初の一回だけ
@@ -90,25 +109,49 @@ struct ContentView: View {
 
         // 非同期処理
         Task {
-            async let entity1 = Entity(named: "table_idle")
-            async let entity2 = Entity(named: "chair_idle")
+            // モデルの読み込み（コメントアウト部分はメモリ次第）
+            async let entity0 = Entity(named: "house_before")
+            async let entity1 = Entity(named: "table_before")
+            async let entity2 = Entity(named: "chair_before")
+            async let entity3 = Entity(named: "table_after")
+            async let entity4 = Entity(named: "chair_after")
+            // async let entity5 = Entity(named: "toilet_before")
+            // async let entity6 = Entity(named: "toilet_after")
             
-            if let model1 = try? await entity1, let model2 = try? await entity2 {
-                model1.name = "table_before"
-                model2.name = "chair_before"
-
-                // 固定ターゲットの確認（if 固定 → 解除）
-                checkAnchoringComponents(entity: model1)
-                checkAnchoringComponents(entity: model2)
+            // 各モデルに識別のための名前を付与
+            if let house1 = try? await entity0, let table1 = try? await entity1, let chair1 = try? await entity2, let table = try? await entity3, let chair = try? await entity4 {
+                
+                house1.name = "house_before"
+                table1.name = "table_before"
+                chair1.name = "chair_before"
+                // toilet1.name = "toilet_before"
+                table.name = "table_after"
+                chair.name = "chair_after"
+                // toilet.name = "toilet_after"
+                
+                // タップ後のモデルを保持
+                loadNewModels["table_after"] = table
+                loadNewModels["chair_after"] = chair
+                // loadNewModels["toilet_after"] = toilet
+                
                 // モデルに当たり判定を付与
-                model1.generateCollisionShapes(recursive: true)
-                model2.generateCollisionShapes(recursive: true)
+                table1.generateCollisionShapes(recursive: true)
+                chair1.generateCollisionShapes(recursive: true)
+                // toilet1.generateCollisionShapes(recursive: true)
+                
                 // MainActorによってメインスレッドを処理（メインスレッドでUIの更新を行う）
                 await MainActor.run {
-                    model1.position = [0.3, 0, -0.5]
-                    model2.position = [-0.3, 0, -0.5]
-                    mainAnchor?.addChild(model1)
-                    mainAnchor?.addChild(model2)
+                    house1.position = [0, 0, 0]
+                    table1.position = [0.3, 0, -0.5]
+                    chair1.position = [-0.1, 0, -0.3]
+                    // toilet1.position = [-6, 0, -5]
+                    mainAnchor?.addChild(house1)
+                    mainAnchor?.addChild(table1)
+                    mainAnchor?.addChild(chair1)
+                    // mainAnchor?.addChild(toilet1)
+                    
+                    // モデル数をカウント
+                    remainingModels = 2
                 }
             }
         }
@@ -127,12 +170,13 @@ struct ContentView: View {
 
         // 非同期処理
         Task {
-            if let model = try? await Entity(named: "chair_idle") {
+            if let model = try? await Entity(named: "house_before") {
                 checkAnchoringComponents(entity: model) // 固定ターゲットの確認（if 固定 → 解除）
                 model.generateCollisionShapes(recursive: true) // モデルに当たり判定を付与
                 // MainActorによってメインスレッドを処理（メインスレッドでUIの更新を行う）
                 await MainActor.run {
-                    model.position = [0, 0, -0.5]
+                    model.position = [0, 0, -1]
+                    model.scale = [0.1, 0.1, 0.1]
                     mainAnchor?.addChild(model)
                 }
             }
@@ -144,11 +188,15 @@ struct ContentView: View {
 struct ARViewContainer: UIViewRepresentable {
     // 外側（ContentView側）でもARViewを操作できるようにする
     @Binding var arView: ARView
+    // 外側（ContentView側）でもloadNewdModelsを操作できるようにする
+    @Binding var loadNewModels: [String: Entity]
     // 外側（ContentView側）でもAnchorEntityを操作できるようにする
     @Binding var mainAnchor: AnchorEntity?
     // 外側（ContentView側）でも[Entity]を操作できるようにする
     @Binding var newModels: [Entity]
-
+    // 外側（ContentView側）でもremainingModelsを操作できるようにする
+    @Binding var remainingModels: Int
+    
 
     // ARViewのセットアップ
     func makeUIView(context: Context) -> ARView {
@@ -186,6 +234,14 @@ struct ARViewContainer: UIViewRepresentable {
 
             // タップされた場所にモデルがあるかを探し、あれば下記処理を実行
             if let tappedModel = arView.entity(at: tapLocation) {
+                
+                var targetEntity = tappedModel
+                
+                // 親をたどる：Scene直下（AnchorEntityなど）にぶら下がってる一個手前までたどる
+                while let parent = targetEntity.parent, !(parent is AnchorEntity) {
+                    targetEntity = parent
+                }
+                
                 print("タップされたモデル: '\(tappedModel.name)'")
 
                 let position = tappedModel.position // モデルの座標を取得 ※世界視点：relativeTo: nil
@@ -193,7 +249,7 @@ struct ARViewContainer: UIViewRepresentable {
                 // 非同期処理（ここではタップされた場所に新しいモデルを置く）
                 Task {
                     await self.replaceModel(at: position, in: arView, entity: tappedModel)
-                    await tappedModel.removeFromParent() // モデルの削除
+                    await targetEntity.removeFromParent() // モデルの削除
                 }
                 
             } else {
@@ -204,19 +260,62 @@ struct ARViewContainer: UIViewRepresentable {
         // 新しいモデルを設置する関数
         func replaceModel(at position: SIMD3<Float>, in arView: ARView, entity tappedModel: Entity) async {
             
-            if let newModel = try? await Entity(named: "test7_color") {
-                checkAnchoringComponents(entity: newModel) // 固定ターゲットの確認（if 固定 → 解除）
-                checkAnimations(entity: newModel) // アニメーションの確認（if あり → 再生）
-                print(" 古いモデル '\(await tappedModel.name)' → 新しいモデル '\(await newModel.name)'")
+            // タップされたエンティティから最大の親をたどる
+            var rootEntity = tappedModel
+            while let parent = rootEntity.parent, !(parent is AnchorEntity) {
+                rootEntity = parent
+            }
+
+            // rootEntity配下を探索して、対象のモデル名を探す
+            var newModelName: String? = nil
+            
+            if let matchName = findMatchingName(in: rootEntity) {
+                var newModelName: String? = nil
+                switch matchName {
+                case "table_before":
+                    newModelName = "table_after"
+                case "chair_before":
+                    newModelName = "chair_after"
+                case "toilet_before":
+                    newModelName = "toilet_after"
+                default:
+                    break
+                }
                 
-                // 非同期処理
-                await MainActor.run {
-                    newModel.position = position
-                    self.container.mainAnchor?.addChild(newModel)
-                    self.container.newModels.append(newModel)
+                if let modelName = newModelName, let templateModel = self.container.loadNewModels[modelName] {
+                    let newModel = templateModel.clone(recursive: true)
+                    newModel.name = modelName
+                    
+                    checkAnimations(entity: newModel)
+                    print(" 古いモデル '\(matchName)' → 新しいモデル '\(newModel.name)'")
+                    
+                    await MainActor.run {
+                        newModel.position = position
+                        self.container.mainAnchor?.addChild(newModel)
+                        self.container.newModels.append(newModel)
+                        self.container.remainingModels -= 1 // カウント減少
+                    }
+                } else {
+                    print("新しいモデルが見つかりませんでした")
                 }
             }
+
         }
+
+        // entityの子要素に該当の名前があるかを探索する関数
+        func findMatchingName(in entity: Entity) -> String? {
+            if entity.name == "table_before" || entity.name == "chair_before" || entity.name == "toilet_before" {
+                return entity.name
+            }
+            for child in entity.children {
+                if let match = findMatchingName(in: child) {
+                    return match
+                }
+            }
+            return nil
+        }
+
+
     }
 }
 
