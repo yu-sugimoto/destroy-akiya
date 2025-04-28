@@ -69,3 +69,4 @@ fastlane/test_output
 DerivedData/
 .DS_Store
 
+destroy-akiya/RealityKit Content/house_before.usdz
