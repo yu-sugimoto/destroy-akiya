@@ -7,14 +7,14 @@
 
 import SwiftUI
 
-struct EndView: View {
+struct EndView2: View {
     @State private var isARActive = false
 
     var body: some View {
         NavigationStack {
             ZStack {
                 // 背景画像
-                Image("with_button_p4") // ← ここを新しい画像名に変更！
+                Image("with_button_p6") // ← ここを新しい画像名に変更！
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
@@ -31,12 +31,12 @@ struct EndView: View {
             }
             .navigationBarHidden(true)
             .navigationDestination(isPresented: $isARActive) {
-                EndView1()
+                EndView3()
             }
         }
     }
 }
 
 #Preview {
-    EndView() // ← ここも正しく EndView にする
+    EndView2() // ← ここも正しく EndView にする
 }
