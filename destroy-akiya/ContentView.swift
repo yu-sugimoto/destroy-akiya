@@ -90,13 +90,27 @@ struct ContentView: View {
 
         // 非同期処理
         Task {
-            if let model = try? await Entity(named: "toilet1After") {
-                checkAnchoringComponents(entity: model) // 固定ターゲットの確認（if 固定 → 解除）
-                model.generateCollisionShapes(recursive: true) // モデルに当たり判定を付与
+            async let entity1 = Entity(named: "table_idle")
+            async let entity2 = Entity(named: "chair_idle")
+            
+            if let model1 = try? await entity1, let model2 = try? await entity2 {
+                // debug
+                print(model1.name)
+                print(model2.name)
+                
+                
+                // 固定ターゲットの確認（if 固定 → 解除）
+                checkAnchoringComponents(entity: model1)
+                checkAnchoringComponents(entity: model2)
+                // モデルに当たり判定を付与
+                model1.generateCollisionShapes(recursive: true)
+                model2.generateCollisionShapes(recursive: true)
                 // MainActorによってメインスレッドを処理（メインスレッドでUIの更新を行う）
                 await MainActor.run {
-                    model.position = [0, 0, -0.5]
-                    mainAnchor?.addChild(model)
+                    model1.position = [0.3, 0, -0.5]
+                    model2.position = [-0.3, 0, -0.5]
+                    mainAnchor?.addChild(model1)
+                    mainAnchor?.addChild(model2)
                 }
             }
         }
@@ -115,7 +129,7 @@ struct ContentView: View {
 
         // 非同期処理
         Task {
-            if let model = try? await Entity(named: "table_final") {
+            if let model = try? await Entity(named: "chair_idle") {
                 checkAnchoringComponents(entity: model) // 固定ターゲットの確認（if 固定 → 解除）
                 model.generateCollisionShapes(recursive: true) // モデルに当たり判定を付与
                 // MainActorによってメインスレッドを処理（メインスレッドでUIの更新を行う）
@@ -191,7 +205,8 @@ struct ARViewContainer: UIViewRepresentable {
 
         // 新しいモデルを設置する関数
         func replaceModel(at position: SIMD3<Float>, in arView: ARView, entity tappedModel: Entity) async {
-            if let newModel = try? await Entity(named: "toilet1After") {
+            
+            if let newModel = try? await Entity(named: "test7_color") {
                 checkAnchoringComponents(entity: newModel) // 固定ターゲットの確認（if 固定 → 解除）
                 checkAnimations(entity: newModel) // アニメーションの確認（if あり → 再生）
                 print(" 古いモデル '\(await tappedModel.name)' → 新しいモデル '\(await newModel.name)'")
