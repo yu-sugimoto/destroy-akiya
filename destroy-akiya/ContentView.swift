@@ -94,11 +94,9 @@ struct ContentView: View {
             async let entity2 = Entity(named: "chair_idle")
             
             if let model1 = try? await entity1, let model2 = try? await entity2 {
-                // debug
-                print(model1.name)
-                print(model2.name)
-                
-                
+                model1.name = "table_before"
+                model2.name = "chair_before"
+
                 // 固定ターゲットの確認（if 固定 → 解除）
                 checkAnchoringComponents(entity: model1)
                 checkAnchoringComponents(entity: model2)
