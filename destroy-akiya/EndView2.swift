@@ -15,7 +15,7 @@ struct EndView2: View {
             // NavigationStackはここには書かない！！！
 
             // 背景画像
-            Image("with_button_p4")
+            Image("with_button_p6")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
